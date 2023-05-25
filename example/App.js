@@ -11,7 +11,18 @@ export const App = {
             "div",
             {
                 id: 'root',
-                class : ["red", "hard"]
+                class: ["red", "hard"],
+                // 注册一个点击事件
+                // 同时会为元素添加一个名为"onClick"的特性
+                onClick() {
+                    console.log('click');
+                },
+                // 以上等价于，即添加一个名为onClick的特性，值为一个函数
+                // onClick = () => console.log('click');
+
+                onMousedown() {
+                    console.log('mousedown')
+                }
             },
             // 此时children为string类型
             // "text-test" + this.msg
