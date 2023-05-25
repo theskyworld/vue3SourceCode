@@ -5,7 +5,7 @@
 // 如果raw为一个引用类型的值，则先通过reactive将其转换为一个响应式对象，通过ref()返回的对象get或者set value时操作的是转换后的那个响应式对象
 
 import { trackEffect, triggerEffect } from "./effect";
-import { hasChanged, isObject } from '../shared'
+import { hasChanged, isObject } from '../shared/index'
 import { reactive } from "./reactive";
 
 class RefImpl {
