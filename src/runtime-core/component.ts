@@ -1,5 +1,6 @@
 import { PublicInstanceProxyHandlers } from './componentPublicInstance';
 import { initProps } from '../runtime-core/componentProps';
+import { shallowReadonly } from '../reactivity/reactive';
 
 
 export function createComponentInstance(vnode) {
@@ -56,7 +57,8 @@ function setupStatefulComponent(instance) {
     const { setup } = component;
 
     if (setup) {
-        const setupResult = setup(instance.props);
+        // 获取到的props对象只读，不可被修改，使用shallowReadonly()进行封装
+        const setupResult = setup(shallowReadonly(instance.props));
         // 根据在创建组件时的书写习惯，setup()函数可能返回一个函数，也可能返回一个对象
         handleSetupResult(instance, setupResult);
     }
