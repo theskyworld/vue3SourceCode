@@ -1,3 +1,5 @@
+import { hasOwn } from "../shared/index";
+
 const publicPropertiesMap = {
     $el: instance => instance.vnode.elem, // 获取当前元素虚拟节点的那个DOM元素
 };
@@ -6,9 +8,17 @@ const publicPropertiesMap = {
 export const PublicInstanceProxyHandlers = {
     get({ _: instance }, key) {
         // setupState的值为组件中setup函数的返回的那个对象，其中包含了在setup中创建的数据
-         const { setupState } = instance;
-        if (key in setupState) {
+         const { setupState, props } = instance;
+        // if (key in setupState) {
+        //     return setupState[key];
+        // }
+
+        // 同时用于实现props功能
+        // 将获取到的props中对应的属性值进行返回
+        if (hasOwn(setupState, key)) {
             return setupState[key];
+        } else if (hasOwn(props, key)) {
+            return props[key];
         }
 
         // 获取元素虚拟节点的那个DOM元素

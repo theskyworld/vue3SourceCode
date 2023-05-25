@@ -4,7 +4,7 @@ export function createVNode(type, props?, children?) {
     // 主要是返回一个vnode对象
     const vnode = {
         type, //根组件，调用createVNode()时传入的rootComponent参数的值
-        props,
+        props, // 组件的props
         children,
         shapeFlag : getShapeFlag(type), // 用于判断虚拟节点的类型和虚拟节点的子节点（children）的类型
         elem : null, // 存储元素虚拟节点的那个DOM元素

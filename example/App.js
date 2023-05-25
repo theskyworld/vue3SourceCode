@@ -1,4 +1,5 @@
 import { h } from '../lib/guide-mini-vue.esm.js';
+import { Foo } from './Foo.js';
 
 window.self = null;
 export const App = {
@@ -29,10 +30,18 @@ export const App = {
             // "hello Alice"
 
             // 此时children为array类型
+            // [
+            // h("p", { class: 'red' }, 'Alice1'),
+            // h("p", { class: 'blue' }, 'Alice2'),
+            // h("p", { class : 'green'}, 'Alice3')
+            // ],
+
+            // 用于实现组件的props功能
             [
-            h("p", { class: 'red' }, 'Alice1'),
-            h("p", { class: 'blue' }, 'Alice2'),
-            h("p", { class : 'green'}, 'Alice3')
+                h('div', {}, "hi," + this.msg),
+                h(Foo, {
+                    count : 1,
+                })
             ]
         );
     },

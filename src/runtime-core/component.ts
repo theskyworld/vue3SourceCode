@@ -1,29 +1,28 @@
 import { PublicInstanceProxyHandlers } from './componentPublicInstance';
+import { initProps } from '../runtime-core/componentProps';
+
+
 export function createComponentInstance(vnode) {
     // 基于虚拟节点对象创建一个组件实例对象并返回
     const component = {
         vnode,  //原始组件（rootComponent）转换为虚拟节点后的虚拟节点
         type: vnode.type,  //原始组件（rootComponent）
-        setupState : {}, // 存储原始组件中setup函数的返回值对象
+        setupState: {}, // 存储原始组件中setup函数的返回值对象
+        props : {}, // 组件上的props
     };
 
     return component;
 }
 
 export function setupComponent(instance) {
-    initProps();
-    initSlots();
+    // 实现组件的props功能
+    initProps(instance, instance.vnode.props);
+    // initSlots();
 
     setupStatefulComponent(instance);
 }
 
-function initSlots() {
 
-}
-
-function initProps() {
-
-}
 
 // 获取原始组件中的setup函数的返回值，并进行处理
 function setupStatefulComponent(instance) {
@@ -57,7 +56,7 @@ function setupStatefulComponent(instance) {
     const { setup } = component;
 
     if (setup) {
-        const setupResult = setup();
+        const setupResult = setup(instance.props);
         // 根据在创建组件时的书写习惯，setup()函数可能返回一个函数，也可能返回一个对象
         handleSetupResult(instance, setupResult);
     }
