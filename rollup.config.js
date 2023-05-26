@@ -11,11 +11,13 @@ export default {
         {
             format: "cjs",
             // file : "lib/guide-mini-vue.cjs.js",
+            // 优化
             file : pkg.main,
         },
         {
             format: "esm",
             // file : "lib/guide-mini-vue.esm.js",
+            // 优化
             file : pkg.module,
         }
     ],
