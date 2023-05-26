@@ -1,6 +1,7 @@
 import { PublicInstanceProxyHandlers } from './componentPublicInstance';
 import { initProps } from '../runtime-core/componentProps';
 import { shallowReadonly } from '../reactivity/reactive';
+import { emit } from './componentEmits';
 
 
 export function createComponentInstance(vnode) {
@@ -9,9 +10,10 @@ export function createComponentInstance(vnode) {
         vnode,  //原始组件（rootComponent）转换为虚拟节点后的虚拟节点
         type: vnode.type,  //原始组件（rootComponent）
         setupState: {}, // 存储原始组件中setup函数的返回值对象
-        props : {}, // 组件上的props
+        props: {}, // 组件上的props
+        emit : () => {} // 组件上的emit
     };
-
+    component.emit = emit.bind(null, component) as any;
     return component;
 }
 
@@ -58,7 +60,12 @@ function setupStatefulComponent(instance) {
 
     if (setup) {
         // 获取到的props对象只读，不可被修改，使用shallowReadonly()进行封装
-        const setupResult = setup(shallowReadonly(instance.props));
+        // const setupResult = setup(shallowReadonly(instance.props));
+        
+        // 实现props和emit的功能
+        const setupResult = setup(shallowReadonly(instance.props), {
+            emit : instance.emit
+        });
         // 根据在创建组件时的书写习惯，setup()函数可能返回一个函数，也可能返回一个对象
         handleSetupResult(instance, setupResult);
     }
