@@ -30,7 +30,8 @@ function normalizeObjectSlots(children, slots) {
         const value = children[key];
         // slots[key] = normalizeSlotValue(value);
         // 同时实现作用域插槽
-        slots[key] = args => normalizeSlotValue(value(args));
+        // 使用value(args)表示作用域插槽，传递了args参数，否则表示普通或者具名插槽
+        slots[key] = args => normalizeSlotValue(args ? value(args) : value);
     }
 }
 

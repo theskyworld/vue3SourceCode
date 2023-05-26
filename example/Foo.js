@@ -69,13 +69,13 @@ export const Foo = {
         // 具名插槽
         // 测试指定slots的渲染位置
         // return h("div", {}, [
-            renderSlots(this.$slots, "header"),
-            foo,
-            renderSlots(this.$slots, 'footer')
+            // renderSlots(this.$slots, "header"),
+            // foo,
+            // renderSlots(this.$slots, 'footer')
         // ])
 
 
-        // 作用域插槽
+        // 测试作用域插槽，Fragmemnt虚拟节点
         // 传递参数
         const age = 16;
         return h("div", {}, [

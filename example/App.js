@@ -1,4 +1,4 @@
-import { h } from '../lib/guide-mini-vue.esm.js';
+import { h, createTextVnode } from '../lib/guide-mini-vue.esm.js';
 import { Foo } from './Foo.js';
 
 // 测试props功能
@@ -99,15 +99,25 @@ export const App = {
         // })
 
 
-        // 作用域插槽
+        // 测试作用域插槽，Fragmemnt虚拟节点
         // 接收参数
         // 通过函数的形式接收参数并使用
         // 如果传递的参数存放在一个对象中，需要进行解构
+        // const foo = h(Foo, {}, {
+        //     header: ({ age }) => h("p", {}, "header" + age),
+        //     footer : h("p", {}, "footer")
+        // })
+        
+
+        // 测试文本虚拟节点
         const foo = h(Foo, {}, {
-            header: ({ age }) => h("p", {}, "header" + age),
+            header: ({ age }) => [
+                h("p", {}, "header" + age),
+                createTextVnode("hello Alice, how are you")
+            ],
             footer : h("p", {}, "footer")
         })
-        
+
         return h("div", {}, [
             app,
             foo

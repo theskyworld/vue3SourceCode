@@ -1,6 +1,7 @@
 import { isObject } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { Fragment } from "./helpers/renderSlots";
 
 export function render(vnode, container) {
     // 主要是调用patch方法
@@ -22,20 +23,60 @@ function patch(vnode, container) {
     
     // 将上述代码进行优化
     // 使用ShapeFlags进行位运算的判断
-    const { shapeFlag } = vnode;
-    // 判断是否为元素虚拟节点类型
-    if (shapeFlag & ShapeFlags.ELEMENT) {
-        // 元素虚拟节点类型
-        processElement(vnode, container);
-        // 判断是否为组件虚拟节点类型
-    } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        // 如果虚拟节点为组件类型
-        // 则先获取并处理原始组件中的setup函数的返回值跟render函数（如果有的话）
-        // 然后再调用原始组件的render()函数，获取其返回的结果值，元素类型，然后调用processElement()将元素类型挂载到容器元素上，渲染在页面上
-        processComponent(vnode, container);
+    const { shapeFlag, type } = vnode;
+    // // 判断是否为元素虚拟节点类型
+    // if (shapeFlag & ShapeFlags.ELEMENT) {
+    //     // 元素虚拟节点类型
+    //     processElement(vnode, container);
+    //     // 判断是否为组件虚拟节点类型
+    // } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    //     // 如果虚拟节点为组件类型
+    //     // 则先获取并处理原始组件中的setup函数的返回值跟render函数（如果有的话）
+    //     // 然后再调用原始组件的render()函数，获取其返回的结果值，元素类型，然后调用processElement()将元素类型挂载到容器元素上，渲染在页面上
+    //     processComponent(vnode, container);
+    // }
+
+
+    // 同时考虑Fragment虚拟节点和文本虚拟节点的情况
+    switch (type) {
+        // Fragment虚拟节点
+        case Fragment:
+            processFragment(vnode, container);
+            break;
+        case Text:
+            processText(vnode, container);
+            break;
+        default:
+            // 判断是否为元素虚拟节点类型
+            if (shapeFlag & ShapeFlags.ELEMENT) {
+                // 元素虚拟节点类型
+                processElement(vnode, container);
+                // 判断是否为组件虚拟节点类型
+            } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+                // 如果虚拟节点为组件类型
+                // 则先获取并处理原始组件中的setup函数的返回值跟render函数（如果有的话）
+                // 然后再调用原始组件的render()函数，获取其返回的结果值，元素类型，然后调用processElement()将元素类型挂载到容器元素上，渲染在页面上
+                processComponent(vnode, container);
+            }
     }
+}   
+
+function processText(vnode, contanier) {
+    const { children } = vnode;
+    const textNodeElem = (vnode.elem = document.createTextNode(children));
+    contanier.append(textNodeElem);
 }
 
+function processFragment(vnode, container) {
+    // 其本质就是把片段当作一个或多个children节点，然后将它们通过调用patch来渲染到父元素上（容器）
+    mountChildren(vnode, container);
+}
+
+function mountChildren(vnode, container) {
+    vnode.children.forEach(child => {
+        patch(child, container)
+    })
+}
 function processComponent(vnode, container) {
     mountComponent(vnode, container);
 }
