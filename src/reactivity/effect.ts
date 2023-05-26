@@ -1,6 +1,6 @@
 // 手动封装一个effect
 
-import { extend } from "../shared";
+import { extend } from "../shared/index";
 
 
 // 保存当前的effect对象（依赖）
