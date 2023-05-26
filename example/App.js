@@ -1,4 +1,4 @@
-import { h, createTextVnode } from '../lib/guide-mini-vue.esm.js';
+import { h, createTextVnode, getCurrentInstance } from '../lib/guide-mini-vue.esm.js';
 import { Foo } from './Foo.js';
 
 // 测试props功能
@@ -110,20 +110,28 @@ export const App = {
         
 
         // 测试文本虚拟节点
-        const foo = h(Foo, {}, {
-            header: ({ age }) => [
-                h("p", {}, "header" + age),
-                createTextVnode("hello Alice, how are you")
-            ],
-            footer : h("p", {}, "footer")
-        })
+        // const foo = h(Foo, {}, {
+        //     header: ({ age }) => [
+        //         h("p", {}, "header" + age),
+        //         createTextVnode("hello Alice, how are you")
+        //     ],
+        //     footer : h("p", {}, "footer")
+        // })
 
-        return h("div", {}, [
-            app,
-            foo
-        ]);
+
+        // return h("div", {}, [
+        //     app,
+        //     foo
+        // ]);
+
+        // 测试getCurrentInstance()
+        return h("div", {}, [h("p", {}, "currentInstance demo"), h(Foo)]);
+   
     },
     setup() {
+        // 测试getCurrentInstance()
+        const instance = getCurrentInstance();
+        console.log("App", instance);
         return {
 
         }

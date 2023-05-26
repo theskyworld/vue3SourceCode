@@ -1,4 +1,4 @@
-import { h, renderSlots } from "../lib/guide-mini-vue.esm.js";
+import { h, renderSlots, getCurrentInstance } from "../lib/guide-mini-vue.esm.js";
 
 
 // 测试props功能
@@ -49,42 +49,54 @@ import { h, renderSlots } from "../lib/guide-mini-vue.esm.js";
 
 // 测试slots功能
 export const Foo = {
+    // setup() {
+    //     return {};
+    // },
+    // render() {
+    //     const foo = h("p", {}, "foo");
+
+    //     // return h("div", {}, [
+    //     //     foo,
+    //     //     this.$slots
+    //     // ]);
+
+    //     // 当传入的slots为单个或者多个（多个slots组成的一个数组时）时
+    //     // return h("div", {}, [
+    //     //     foo,
+    //     //     renderSlots(this.$slots)
+    //     // ])
+
+    //     // 具名插槽
+    //     // 测试指定slots的渲染位置
+    //     // return h("div", {}, [
+    //         // renderSlots(this.$slots, "header"),
+    //         // foo,
+    //         // renderSlots(this.$slots, 'footer')
+    //     // ])
+
+
+    //     // 测试作用域插槽，Fragmemnt虚拟节点
+    //     // 传递参数
+    //     // const age = 16;
+    //     // return h("div", {}, [
+    //     //     // 传递age参数给App.js组件
+    //     //     renderSlots(this.$slots, "header", {
+    //     //         age
+    //     //     }),
+    //     //     foo,
+    //     //     renderSlots(this.$slots, 'footer')
+    //     // ])
+    // }
+
+
+    // 测试getCurrentInstance
+    name: "Foo",
     setup() {
+        const instance = getCurrentInstance();
+        console.log("Foo", instance);
         return {};
     },
     render() {
-        const foo = h("p", {}, "foo");
-
-        // return h("div", {}, [
-        //     foo,
-        //     this.$slots
-        // ]);
-
-        // 当传入的slots为单个或者多个（多个slots组成的一个数组时）时
-        // return h("div", {}, [
-        //     foo,
-        //     renderSlots(this.$slots)
-        // ])
-
-        // 具名插槽
-        // 测试指定slots的渲染位置
-        // return h("div", {}, [
-            // renderSlots(this.$slots, "header"),
-            // foo,
-            // renderSlots(this.$slots, 'footer')
-        // ])
-
-
-        // 测试作用域插槽，Fragmemnt虚拟节点
-        // 传递参数
-        const age = 16;
-        return h("div", {}, [
-            // 传递age参数给App.js组件
-            renderSlots(this.$slots, "header", {
-                age
-            }),
-            foo,
-            renderSlots(this.$slots, 'footer')
-        ])
+        return h("div", {}, "foo");
     }
 }

@@ -4,6 +4,7 @@ import { shallowReadonly } from '../reactivity/reactive';
 import { emit } from './componentEmits';
 import { initSlots } from './componentSlots';
 
+let currentInstance = null;
 
 export function createComponentInstance(vnode) {
     // 基于虚拟节点对象创建一个组件实例对象并返回
@@ -61,6 +62,12 @@ function setupStatefulComponent(instance) {
     const { setup } = component;
 
     if (setup) {
+        // 用于实现getCurrentInstance
+        // currentInstance = instance;
+        // 优化
+        setCurrentInstance(instance);
+
+
         // 获取到的props对象只读，不可被修改，使用shallowReadonly()进行封装
         // const setupResult = setup(shallowReadonly(instance.props));
         
@@ -68,6 +75,9 @@ function setupStatefulComponent(instance) {
         const setupResult = setup(shallowReadonly(instance.props), {
             emit : instance.emit
         });
+
+        setCurrentInstance(null);
+
         // 根据在创建组件时的书写习惯，setup()函数可能返回一个函数，也可能返回一个对象
         handleSetupResult(instance, setupResult);
     }
@@ -94,10 +104,11 @@ function finishComponentSetup(instance) {
     }
 }
 
+export function getCurrentInstance() {
+    return currentInstance;
+}
 
 
-
-
-
-
-
+function setCurrentInstance(instance) {
+    currentInstance = instance;
+}
