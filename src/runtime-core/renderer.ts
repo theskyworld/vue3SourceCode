@@ -3,9 +3,9 @@ import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { Fragment } from "./helpers/renderSlots";
 
-export function render(vnode, container, parentComponent) {
+export function render(vnode, container) {
     // 主要是调用patch方法
-    patch(vnode, container, parentComponent);   
+    patch(vnode, container, null);   
 }
 
 function patch(vnode, container, parentComponent) {
