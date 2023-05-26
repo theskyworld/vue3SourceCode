@@ -1,6 +1,7 @@
 import { h } from '../lib/guide-mini-vue.esm.js';
 import { Foo } from './Foo.js';
 
+// 测试props功能
 // window.self = null;
 // export const App = {
 
@@ -54,23 +55,67 @@ import { Foo } from './Foo.js';
 
 
 // 测试emit功能
-export const App = {
-    name: 'App',
-    render() {
-        return h('div', {}, [
-            h('div', {}, "App"),
-            h(Foo, {
-                onAdd(a, b, c) {
-                    console.log("onAdd", a, b, c)
-                },
-                onAddNum(a, b) {
-                    console.log('onAddNum', a, b)
-                }
-            })
+// export const App = {
+//     name: 'App',
+//     render() {
+//         return h('div', {}, [
+//             h('div', {}, "App"),
+//             h(Foo, {
+//                 onAdd(a, b, c) {
+//                     console.log("onAdd", a, b, c)
+//                 },
+//                 onAddNum(a, b) {
+//                     console.log('onAddNum', a, b)
+//                 }
+//             })
             
-        ])
+//         ])
+//     },
+//     setup() {
+//         return {};
+//     },
+// }
+
+
+// 测试slots功能
+export const App = {
+    name: "App",
+    render() {
+        const app = h("div", {}, "App");
+        // 传递的children即为传递给Foo.js的slots
+        // 可以传递单个或多个slots(多个组成的一个数组)
+        // const foo = h(Foo, {}, [
+        //     h("p", {}, "hello"),
+        //     h("p", {}, "hi")
+        // ]
+        // );
+
+        // 具名插槽
+        // 测试指定slots的位置
+        // 此时通过对象的形式将slots进行传递
+        // const foo = h(Foo, {}, {
+        //     header: h("p", {}, "header"),
+        //     footer : h("p", {}, "footer")
+        // })
+
+
+        // 作用域插槽
+        // 接收参数
+        // 通过函数的形式接收参数并使用
+        // 如果传递的参数存放在一个对象中，需要进行解构
+        const foo = h(Foo, {}, {
+            header: ({ age }) => h("p", {}, "header" + age),
+            footer : h("p", {}, "footer")
+        })
+        
+        return h("div", {}, [
+            app,
+            foo
+        ]);
     },
     setup() {
-        return {};
-    },
+        return {
+
+        }
+    }
 }

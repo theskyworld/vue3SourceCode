@@ -2,6 +2,8 @@ import { hasOwn } from "../shared/index";
 
 const publicPropertiesMap = {
     $el: instance => instance.vnode.elem, // 获取当前元素虚拟节点的那个DOM元素
+    // $slots: instance => instance.vnode.children, //获取当前虚拟节点上的children
+    $slots: instance => instance.slots,
 };
 
 
