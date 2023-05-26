@@ -6,7 +6,8 @@ import { initSlots } from './componentSlots';
 
 let currentInstance = null;
 
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
+    // console.log(parent)
     // 基于虚拟节点对象创建一个组件实例对象并返回
     const component = {
         vnode,  //原始组件（rootComponent）转换为虚拟节点后的虚拟节点
@@ -14,7 +15,11 @@ export function createComponentInstance(vnode) {
         setupState: {}, // 存储原始组件中setup函数的返回值对象
         props: {}, // 组件上的props
         emit: () => { }, // 组件上的emit
-        slots : {},
+        slots: {},
+        // provides: {},
+        // 实现跨组件
+        provides : parent ? parent.provides : {},
+        parent,
     };
     component.emit = emit.bind(null, component) as any;
     return component;

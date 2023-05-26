@@ -3,12 +3,12 @@ import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { Fragment } from "./helpers/renderSlots";
 
-export function render(vnode, container) {
+export function render(vnode, container, parentComponent) {
     // 主要是调用patch方法
-    patch(vnode, container);   
+    patch(vnode, container, parentComponent);   
 }
 
-function patch(vnode, container) {
+function patch(vnode, container, parentComponent) {
     // 区分组件虚拟节点类型和元素虚拟节点类型的逻辑
     // 通过原始组件在console.log中的结果值判断
     // if (typeof vnode.type === 'string') {
@@ -41,7 +41,7 @@ function patch(vnode, container) {
     switch (type) {
         // Fragment虚拟节点
         case Fragment:
-            processFragment(vnode, container);
+            processFragment(vnode, container, parentComponent);
             break;
         case Text:
             processText(vnode, container);
@@ -50,13 +50,13 @@ function patch(vnode, container) {
             // 判断是否为元素虚拟节点类型
             if (shapeFlag & ShapeFlags.ELEMENT) {
                 // 元素虚拟节点类型
-                processElement(vnode, container);
+                processElement(vnode, container, parentComponent);
                 // 判断是否为组件虚拟节点类型
             } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
                 // 如果虚拟节点为组件类型
                 // 则先获取并处理原始组件中的setup函数的返回值跟render函数（如果有的话）
                 // 然后再调用原始组件的render()函数，获取其返回的结果值，元素类型，然后调用processElement()将元素类型挂载到容器元素上，渲染在页面上
-                processComponent(vnode, container);
+                processComponent(vnode, container, parentComponent);
             }
     }
 }   
@@ -67,25 +67,25 @@ function processText(vnode, contanier) {
     contanier.append(textNodeElem);
 }
 
-function processFragment(vnode, container) {
+function processFragment(vnode, container, parentComponent) {
     // 其本质就是把片段当作一个或多个children节点，然后将它们通过调用patch来渲染到父元素上（容器）
-    mountChildren(vnode, container);
+    mountChildren(vnode, container, parentComponent);
 }
 
-function mountChildren(vnode, container) {
+function mountChildren(vnode, container, parentComponent) {
     vnode.children.forEach(child => {
-        patch(child, container)
+        patch(child, container, parentComponent)
     })
 }
-function processComponent(vnode, container) {
-    mountComponent(vnode, container);
+function processComponent(vnode, container, parentComponent) {
+    mountComponent(vnode, container, parentComponent);
 }
 
-function processElement(vnode, container) {
-    mountElement(vnode, container);
+function processElement(vnode, container, parentComponent) {
+    mountElement(vnode, container, parentComponent);
 }
 
-function mountElement(vnode, container) {
+function mountElement(vnode, container, parentComponent) {
     // 如果vnode的类型为元素虚拟节点类型
     // 则vnode中type属性对应元素名（例如div）
     // props属性对应元素上的特性名（例如id）
@@ -125,13 +125,13 @@ function mountElement(vnode, container) {
     }
 
     // 处理chldren
-    handleChildren(children, elem, shapeFlag);
+    handleChildren(children, elem, shapeFlag, parentComponent);
 
     // 将元素挂载到容器上，使得其在页面上被渲染
     container.append(elem); 
 }
 
-function handleChildren(children, container, shapeFlag) {
+function handleChildren(children, container, shapeFlag, parentComponent) {
         // children为string类型
         // if (typeof children === 'string') {
         //     container.textContent = children;
@@ -150,11 +150,11 @@ function handleChildren(children, container, shapeFlag) {
         } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
             // children为array类型
             // console.log(children);
-            children.forEach(child => patch(child, container))
+            children.forEach(child => patch(child, container, parentComponent))
         }
 }
-function mountComponent(vnode, container) {
-    const instance = createComponentInstance(vnode);
+function mountComponent(vnode, container, parentComponent) {
+    const instance = createComponentInstance(vnode, parentComponent);
     // 先初始化props和slots，然后获取并处理原始组件中的setup函数的返回值
     setupComponent(instance);
     // 调用原始组件的render()函数，获取其返回的结果值，元素虚拟节点类型，然后调用processElement()将元素类型挂载到容器元素上，渲染在页面上
@@ -165,7 +165,7 @@ function setupRenderEffect(instance, container, vnode) {
     const { proxy } = instance;
     // subTree为一个元素类型的虚拟节点
     const subTree = instance.render.call(proxy); 
-    patch(subTree, container);
+    patch(subTree, container, instance);
 
     // subTree的elem属性存放的是一个组件虚拟节点转换为元素虚拟节点之后所对应的那个DOM元素，也是通过$el属性将要获取到的值
     // 将其赋值给组件实例所对应的虚拟节点中的elem属性上
