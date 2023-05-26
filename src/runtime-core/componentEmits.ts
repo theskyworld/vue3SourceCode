@@ -3,21 +3,21 @@ export function emit(instance, eventName, ...args) { //args接收其它参数（
 
     const { props } = instance;
 
-    // add→ Add   add-num → Add-num
-    const capitalizeFirstLetter = (key: string) => key.charAt(0).toUpperCase() + key.slice(1);
-    // onAdd  onAdd-num
-    const handleKey = (key: string) => key ? "on" + capitalizeFirstLetter(key) : "";
+    const handlerName = handleEventName(eventName);
+    const handler = props[handlerName];
+    
+    // console.log(handlerName)
+
+    // 执行事件的回调函数
+    // if (handler) {
+    //     handler();
+    // }
+    // 或者
+    handler && handler(...args);
+}
 
 
-    // 支持例如add-num的写法
-    // 将例如add-num转换为addNum，然后依次调用capitalizeFirstLetter和handleKey得到onAddNum
-    const camelize = (key: string) => {
-        return key.replace(/-(\w)/g, (_, c: string) => {
-            return c ? c.toUpperCase() : "";
-        });
-    }
-    // onAdd onAddNum
-    const handlerName = handleKey(camelize(eventName));
+
     // 根据转换后的eventName从props中获取对应属性的值（根据事件名获取对应事件的回调函数）
     // 即传入时（转换前）：
     //  emit('add', 1, 2);
@@ -37,15 +37,20 @@ export function emit(instance, eventName, ...args) { //args接收其它参数（
     //         console.log('onAddNum', a, b, c)
     //     }
     // }
-    const handler = props[handlerName];
-    
-    // console.log(handlerName)
+function handleEventName(eventName) {
+    // add→ Add   add-num → Add-num
+    const capitalizeFirstLetter = (key: string) => key.charAt(0).toUpperCase() + key.slice(1);
+    // onAdd  onAdd-num
+    const handleKey = (key: string) => key ? "on" + capitalizeFirstLetter(key) : "";
 
-    // 执行回调函数
-    // if (handler) {
-    //     handler();
-    // }
-    // 或者
-    handler && handler(...args);
 
+    // 支持例如add-num的写法
+    // 将例如add-num转换为addNum，然后依次调用capitalizeFirstLetter和handleKey得到onAddNum
+    const camelize = (key: string) => {
+        return key.replace(/-(\w)/g, (_, c: string) => {
+            return c ? c.toUpperCase() : "";
+        });
+    }
+    // onAdd onAddNum
+    return handleKey(camelize(eventName));
 }
