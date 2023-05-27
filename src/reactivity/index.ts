@@ -1,6 +1,2 @@
-export function addNum(a, b) {
-    return a + b;
-}
-
-export const num = 1;
-
+export { ref, proxyRefs } from './ref';
+export { effect } from "./effect"

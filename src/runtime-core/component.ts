@@ -3,6 +3,7 @@ import { initProps } from '../runtime-core/componentProps';
 import { shallowReadonly } from '../reactivity/reactive';
 import { emit } from './componentEmits';
 import { initSlots } from './componentSlots';
+import { proxyRefs } from '../reactivity';
 
 let currentInstance = null;
 
@@ -20,6 +21,8 @@ export function createComponentInstance(vnode, parent) {
         // 实现跨组件
         provides : parent ? parent.provides : {},
         parent,
+        isMounted: false,
+        subTree : {},
     };
     component.emit = emit.bind(null, component) as any;
     return component;
@@ -95,7 +98,9 @@ function handleSetupResult(instance, setupResult) {
 
     if (typeof setupResult === 'object') {
         // 将组件中setup()函数的返回值赋值给组件实例中的setupState属性
-        instance.setupState = setupResult;
+        // instance.setupState = setupResult;
+        // 解包使用ref封装的响应式对象，获取.value值
+        instance.setupState = proxyRefs(setupResult);
     }
 
     finishComponentSetup(instance);

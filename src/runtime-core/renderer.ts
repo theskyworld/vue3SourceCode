@@ -1,3 +1,4 @@
+import { effect } from "../reactivity";
 import { isObject } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
@@ -17,10 +18,15 @@ export function createRender(options) {
 
     function render(vnode, container) {
         // 主要是调用patch方法
-        patch(vnode, container, null);
+        patch(null, vnode, container, null);
     }
 
-    function patch(vnode, container, parentComponent) {
+
+    // 增加区分组件的初始化和组件更新的逻辑
+    // oldVnode : 更新前的虚拟节点
+    // newVnode : 更新后的虚拟节点
+    // 如果不存在oldVnode作为初始化，反之为更新
+    function patch(oldVnode, newVnode, container, parentComponent) {
         // 区分组件虚拟节点类型和元素虚拟节点类型的逻辑
         // 通过原始组件在console.log中的结果值判断
         // if (typeof vnode.type === 'string') {
@@ -35,7 +41,7 @@ export function createRender(options) {
     
         // 将上述代码进行优化
         // 使用ShapeFlags进行位运算的判断
-        const { shapeFlag, type } = vnode;
+        const { shapeFlag, type } = newVnode;
         // // 判断是否为元素虚拟节点类型
         // if (shapeFlag & ShapeFlags.ELEMENT) {
         //     // 元素虚拟节点类型
@@ -53,48 +59,58 @@ export function createRender(options) {
         switch (type) {
             // Fragment虚拟节点
             case Fragment:
-                processFragment(vnode, container, parentComponent);
+                processFragment(oldVnode, newVnode, container, parentComponent);
                 break;
             case Text:
-                processText(vnode, container);
+                processText(oldVnode, newVnode, container);
                 break;
             default:
                 // 判断是否为元素虚拟节点类型
                 if (shapeFlag & ShapeFlags.ELEMENT) {
                     // 元素虚拟节点类型
-                    processElement(vnode, container, parentComponent);
+                    processElement(oldVnode, newVnode, container, parentComponent);
                     // 判断是否为组件虚拟节点类型
                 } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
                     // 如果虚拟节点为组件类型
                     // 则先获取并处理原始组件中的setup函数的返回值跟render函数（如果有的话）
                     // 然后再调用原始组件的render()函数，获取其返回的结果值，元素类型，然后调用processElement()将元素类型挂载到容器元素上，渲染在页面上
-                    processComponent(vnode, container, parentComponent);
+                    processComponent(oldVnode, newVnode, container, parentComponent);
                 }
         }
     }
 
-    function processText(vnode, contanier) {
-        const { children } = vnode;
-        const textNodeElem = (vnode.elem = document.createTextNode(children));
+    function processText(oldVnode, newVnode, contanier) {
+        const { children } = newVnode;
+        const textNodeElem = (newVnode.elem = document.createTextNode(children));
         contanier.append(textNodeElem);
     }
 
-    function processFragment(vnode, container, parentComponent) {
+    function processFragment(oldVnode, newVnode, container, parentComponent) {
         // 其本质就是把片段当作一个或多个children节点，然后将它们通过调用patch来渲染到父元素上（容器）
-        mountChildren(vnode, container, parentComponent);
+        mountChildren(newVnode, container, parentComponent);
     }
 
     function mountChildren(vnode, container, parentComponent) {
         vnode.children.forEach(child => {
-            patch(child, container, parentComponent)
+            patch(null, child, container, parentComponent)
         })
     }
-    function processComponent(vnode, container, parentComponent) {
-        mountComponent(vnode, container, parentComponent);
+    function processComponent(oldVnode, newVnode, container, parentComponent) {
+        mountComponent(newVnode, container, parentComponent);
     }
 
-    function processElement(vnode, container, parentComponent) {
-        mountElement(vnode, container, parentComponent);
+    function processElement(oldVnode, newVnode, container, parentComponent) {
+        if (!oldVnode) {
+            mountElement(newVnode, container, parentComponent);
+        } else {
+            patchElement(oldVnode, newVnode, container, parentComponent);
+        }
+    }
+
+    function patchElement(oldVnode, newVnode, container, parentComponent) {
+        console.log("patchElement");
+        console.log("old", oldVnode);
+        console.log("new", newVnode);
     }
 
     function mountElement(vnode, container, parentComponent) {
@@ -173,7 +189,7 @@ export function createRender(options) {
         } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
             // children为array类型
             // console.log(children);
-            children.forEach(child => patch(child, container, parentComponent))
+            children.forEach(child => patch(null, child, container, parentComponent))
         }
     }
     function mountComponent(vnode, container, parentComponent) {
@@ -185,14 +201,47 @@ export function createRender(options) {
     }
 
     function setupRenderEffect(instance, container, vnode) {
-        const { proxy } = instance;
-        // subTree为一个元素类型的虚拟节点
-        const subTree = instance.render.call(proxy);
-        patch(subTree, container, instance);
+        // const { proxy } = instance;
+        // // subTree为一个元素类型的虚拟节点
+        // const subTree = instance.render.call(proxy);
+        // patch(subTree, container, instance);
 
-        // subTree的elem属性存放的是一个组件虚拟节点转换为元素虚拟节点之后所对应的那个DOM元素，也是通过$el属性将要获取到的值
-        // 将其赋值给组件实例所对应的虚拟节点中的elem属性上
-        vnode.elem = subTree.elem;
+        // // subTree的elem属性存放的是一个组件虚拟节点转换为元素虚拟节点之后所对应的那个DOM元素，也是通过$el属性将要获取到的值
+        // // 将其赋值给组件实例所对应的虚拟节点中的elem属性上
+        // vnode.elem = subTree.elem;
+
+
+
+        // 实现update
+        // 将以上代码放入effect中作为依赖，当值发生更新时触发依赖的收集和依赖触发
+        effect(() => {
+            // 区分页面初始化和更新（组件挂载和更新）
+            if (!instance.isMounted) {
+                // 初始化
+                console.log("初始化")
+                const { proxy } = instance;
+                const subTree =  (instance.subTree = instance.render.call(proxy));
+                console.log(subTree)
+                patch(null, subTree, container, instance);
+                vnode.elem = subTree.elem;
+
+
+                instance.isMounted = true;
+            } else {
+                // 更新
+                console.log("更新");
+                const { proxy } = instance;
+                // 之前（更新前）的subTree
+                const prevSubTree = instance.subTree;
+                // console.log(prevSubTree);
+                const subTree = instance.render.call(proxy);
+                // 更新后的subTree
+                instance.subTree = subTree;
+                // console.log(subTree);
+
+                patch(prevSubTree, subTree, container, instance);
+            }
+        })
     }
 
 
