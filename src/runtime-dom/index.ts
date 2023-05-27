@@ -29,11 +29,24 @@ function insert(elem, container) {
     container.append(elem);
 }
 
+function remove(childElem : Element) {
+    const parentElem = childElem.parentNode;
+    if (parentElem) {
+        parentElem.removeChild(childElem);
+    }
+}
+
+function setElementText(container, textChildren) {
+    // console.log("container",container,"textChildren",textChildren);
+    container.textContent = textChildren;
+}
 
 const renderer : any = createRender({
     createElement,
     handleProps,
     insert,
+    remove,
+    setElementText,
 }) 
 
 

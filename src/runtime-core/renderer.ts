@@ -12,7 +12,9 @@ export function createRender(options) {
         // 解构并重命名
         createElement : hostCreateElement,
         handleProps  : hostHandleProps,
-        insert : hostInsert,
+        insert: hostInsert,
+        remove: hostRemove,
+        setElementText : hostSetElementText,
     } = options;
 
 
@@ -87,11 +89,11 @@ export function createRender(options) {
 
     function processFragment(oldVnode, newVnode, container, parentComponent) {
         // 其本质就是把片段当作一个或多个children节点，然后将它们通过调用patch来渲染到父元素上（容器）
-        mountChildren(newVnode, container, parentComponent);
+        mountChildren(newVnode.children, container, parentComponent);
     }
 
-    function mountChildren(vnode, container, parentComponent) {
-        vnode.children.forEach(child => {
+    function mountChildren(children, container, parentComponent) {
+        children.forEach(child => {
             patch(null, child, container, parentComponent)
         })
     }
@@ -116,12 +118,72 @@ export function createRender(options) {
         const newProps = newVnode.props || EMPTY_OBJ;
         const elem = (newVnode.elem = oldVnode.elem);
 
+        patchChildren(oldVnode, newVnode, elem, parentComponent);
         patchProps(elem, oldProps, newProps);
+    }
+
+    // 比较新旧children
+    function patchChildren(oldVnode, newVnode, container, parentComponent) {
+        const oldShapeFlag = oldVnode.shapeFlag;
+        const newShapeFlag = newVnode.shapeFlag;
+        const oldChildren = oldVnode.children;
+        const newChildren = newVnode.children;
+
+        // console.log(oldShapeFlag, newShapeFlag)
+        
+        // 情况2 : 旧元素虚拟节点的children类型为array，新元素虚拟节点的children类型为text
+        if (newShapeFlag & ShapeFlags.TEXT_CHILDREN) {/*如果新的children为text类型*/
+            // if (oldShapeFlag & ShapeFlags.ARRAY_CHILDREN) {/*如果老的children为array类型*/
+            //     // 清空老的数组类型的children
+            //     unmountChildren(oldVnode.children);
+
+            //     // 设置新的text类型的children
+            //     hostSetElementText(container, newChildren);
+
+            //     // 情况3 : 旧元素虚拟节点的children类型为text，新元素虚拟节点的children类型为text
+            // } else {
+            //     if (oldChildren !== newChildren) {
+            //         hostSetElementText(container, newChildren);
+            //     }
+            // }
+            
+
+            // 优化以上代码
+            // 情况2
+            if (oldShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+                unmountChildren(oldVnode.children);
+            }
+            // 情况2，3
+            if (oldChildren !== newChildren) {
+                // console.log(oldChildren, newChildren)
+                hostSetElementText(container, newChildren);
+            }
+        } else {
+            // 情况1 : 旧元素虚拟节点的children类型为text，新元素虚拟节点的children类型为array
+            if (oldShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+                
+                // 清除旧的children文本虚拟节点
+                hostSetElementText(container, "");
+                // 挂载新的children数组虚拟节点
+                mountChildren(newChildren, container, parentComponent);
+            }
+        }
+    }
+
+
+    function unmountChildren(ArrayChildren: Array<any>) {
+        // console.log("unmount")
+        for (let i = 0; i < ArrayChildren.length; i++) {
+            // 获取当前children所对应的真实DOM元素
+            const elem = ArrayChildren[i].elem;
+            // 移除该DOM元素
+            hostRemove(elem);
+        }   
     }
 
     // 比较新旧Props
     function patchProps(elem, oldProps, newProps) {
-        // TODO 因为每次
+
         if (oldProps !== newProps) {
             // 处理情况1   foo : value → foo : new-value
             // 处理情况2   foo : value → foo : undefined || null
