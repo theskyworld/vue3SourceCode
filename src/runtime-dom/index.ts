@@ -25,8 +25,12 @@ function handleProps(elem, key, oldVal, newVal) {
 }
 
 
-function insert(elem, container) {
-    container.append(elem);
+function insert(child : Element, container : Element, anchor) {
+    // container.append(elem);
+
+    // 实现能够指定child插入的位置的功能，diff算法中的child插入逻辑
+    container.insertBefore(child, anchor || null);
+
 }
 
 function remove(childElem : Element) {

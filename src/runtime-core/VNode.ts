@@ -7,7 +7,8 @@ export function createVNode(type, props?, children?) {
         props, // 组件的props
         children,
         shapeFlag : getShapeFlag(type), // 用于判断虚拟节点的类型和虚拟节点的子节点（children）的类型
-        elem : null, // 存储元素虚拟节点的那个DOM元素
+        elem: null, // 存储元素虚拟节点的那个DOM元素,
+        key : props && props.key,
     };
     // 对children进行类型判断
     if (typeof children === 'string') {
