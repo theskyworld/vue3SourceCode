@@ -5,4 +5,4 @@ export { renderSlots } from './helpers/renderSlots';
 export { createTextVnode } from './VNode';
 export { getCurrentInstance } from './component';
 export { provide, inject } from './apiInject';
-export { createRender } from "./renderer";
+export { createRender } from "./renderer";  

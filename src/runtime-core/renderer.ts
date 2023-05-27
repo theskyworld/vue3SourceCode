@@ -1,5 +1,5 @@
 import { effect } from "../reactivity";
-import { isObject } from "../shared/index";
+import { EMPTY_OBJ, isObject } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { createAppAPI } from "./createApp";
@@ -11,7 +11,7 @@ export function createRender(options) {
     const {
         // 解构并重命名
         createElement : hostCreateElement,
-        patchProps  : hostPatchProps,
+        handleProps  : hostHandleProps,
         insert : hostInsert,
     } = options;
 
@@ -111,6 +111,43 @@ export function createRender(options) {
         console.log("patchElement");
         console.log("old", oldVnode);
         console.log("new", newVnode);
+
+        const oldProps = oldVnode.props || EMPTY_OBJ;
+        const newProps = newVnode.props || EMPTY_OBJ;
+        const elem = (newVnode.elem = oldVnode.elem);
+
+        patchProps(elem, oldProps, newProps);
+    }
+
+    // 比较新旧Props
+    function patchProps(elem, oldProps, newProps) {
+        // TODO 因为每次
+        if (oldProps !== newProps) {
+            // 处理情况1   foo : value → foo : new-value
+            // 处理情况2   foo : value → foo : undefined || null
+            // 遍历新的props
+            // 取出新的props中所有prop
+            for (const key in newProps) {
+                const prevProp = oldProps[key];
+                const nextProp = newProps[key];
+
+                // 比较新旧prop的值
+                if (prevProp !== nextProp) {
+                    // 触发props的更新
+                    hostHandleProps(elem, key, prevProp, nextProp);
+                }
+            }
+
+            // 处理情况3 foo : value →
+            if (oldProps !== EMPTY_OBJ) {
+                // 遍历旧的props
+                for (const key in oldProps) {
+                    if (!(key in newProps)) {
+                        hostHandleProps(elem, key, oldProps[key], null)
+                    }
+                }
+            }
+        }
     }
 
     function mountElement(vnode, container, parentComponent) {
@@ -155,7 +192,7 @@ export function createRender(options) {
 
             // 自定义渲染器，使得vue能渲染在例如Canvas、DOM等不同平台上
             // 将以上代码抽离到ptachProps函数中
-            hostPatchProps(elem, key, val);
+            hostHandleProps(elem, key, null, val);
     
         }
 

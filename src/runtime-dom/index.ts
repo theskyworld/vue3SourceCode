@@ -8,15 +8,18 @@ function createElement(type) {
 }
 
 
-function patchProps(elem, key, val) {
+function handleProps(elem, key, oldVal, newVal) {
     const isOn = (key: string) => /^on[A-Z]/.test(key);
     if (isOn(key)) {
         // 处理事件
         const eventName = key.slice(2).toLowerCase();
-        elem.addEventListener(eventName, val);
+        elem.addEventListener(eventName, newVal);
     
+        // 处理情况2 foo : value → foo : undefined || null
+    } else if (newVal === undefined || newVal === null) {
+        elem.removeAttribute(key);
     } else {
-        elem.setAttribute(key, val);
+        elem.setAttribute(key, newVal);
     }
            
 }
@@ -29,7 +32,7 @@ function insert(elem, container) {
 
 const renderer : any = createRender({
     createElement,
-    patchProps,
+    handleProps,
     insert,
 }) 
 
