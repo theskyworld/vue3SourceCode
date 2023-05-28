@@ -247,6 +247,70 @@ export function createRender(options) {
                 hostRemove(oldChildren[i].elem);
                 i++;
             }
+
+       // 二、处理中间节点-实现新children中新节点的添加或旧children中旧节点的删除或修改
+        } else {
+            // 确定中间要进行处理的节点区域
+            // 旧新children中要进行比较的区域结束位置分别为oe、ne
+            let os = i; // 旧children中要进行比较的起始位置
+            let ns = i; // 新children中要进行比较的起始位置
+            let toBePatched = ne - ns + 1; //记录新children中要添加或修改的节点数量
+            let patched = 0; //记录新children中已经被添加或修改的节点数量
+
+            // 通过提供给节点的key属性进行比较
+            // 其思路为将新children中要进行对比的节点区域中的所有节点的key以及相应的索引i存入映射表中
+            // 然后在旧children中将要进行对比的节点区域中所有的节点进行遍历，看看在映射表中是否存在相应的key（如果节点相同的key相同，则在映射表中能找到）
+            // 能找到则说明是已存在的，要被修改或保留；不能找到则说明是要被删除的，然后在映射表中所有新的key所对应的节点都是要新建的
+
+
+            // 建立新children中节点的key和节点的索引i的映射表
+            const keyToNewIndexMap = new Map();
+            // 遍历新children中要对比的区域节点的key并将其对应的索引i存入映射表中
+            for (let i = ns; i <= ne; i++) {
+                const newChild = newChildren[i];
+                keyToNewIndexMap.set(newChild.key, i);
+            }
+            // 遍历旧children中要对比的区域节点，依次比较key值
+            for (let i = os; i <= oe; i++) {
+                // 取出当前进行比较的旧节点
+                const oldChild = oldChildren[i];
+
+
+                // 如果新children中要被添加或修改的节点已经处理完毕了，但是还是调用了patch方法导致patched++
+                // 当patched >= toBePatched时说明旧的children中存在要被移除的节点
+                if (patched >= toBePatched) {
+                    // 直接将当前旧children中的节点移除
+                    // 跳出后面的逻辑，进入下次循环
+                    hostRemove(oldChild.elem);
+                    continue;
+                }
+
+
+                let newIndex;
+                if (oldChild.key !== null) {
+                    // 方式一：通过提供给节点的key属性进行比较
+                    newIndex = keyToNewIndexMap.get(oldChild.key);
+                } else {
+                    // 方式二；通过遍历进行比较
+                    for (let j = ns; j < ne; j++) {
+                        if (isSameVnodeType(oldChild, newChildren[j])) {
+                            newIndex = j;
+                            break;
+                        }
+                    }
+                }
+
+                if (newIndex === undefined) {
+                    // 不能找到则说明是要被删除的
+                    hostRemove(oldChild.elem);
+                } else {
+                    // 能找到则说明是已存在的
+                    patch(oldChild, newChildren[newIndex], container, parentComponent, null);
+                    patched++;
+                }
+            }
+
+            
         }
         // console.log(i)
     }

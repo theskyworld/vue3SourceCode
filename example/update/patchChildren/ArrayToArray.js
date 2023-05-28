@@ -77,7 +77,8 @@ const nextChildren = [
 
 // 3.2.2右侧对比
 // const prevChildren = [
-//     h("p", { key : "A" }, "A"),
+//     h("p", { key: "A" }, "A"),
+//     h("p", { key : "D" }, "D"),
 //     h("p", { key: "B" }, "B"),
 //     h("p", { key : "C"}, "C"),
 // ]
@@ -89,7 +90,61 @@ const nextChildren = [
 
 
 
+// 二、处理中间节点-实现新children中新节点的添加或旧children中旧节点的删除或修改
+// 中间，不是绝对的中间，指的是先从左右两端进行比较，排除两端相同节点后的区域，如果存在例如第一个索引位置节点就不同的情况，那么此时中间也从这第一个索引位置开始
+// 3.1-实现新children中新节点的添加或旧节点的修改
+// 3.1.1要处理的节点数量前后一样的情况
+// a b c d f g
+// a b e c f g
+// 删除d节点，修改c节点（节点属性前后发生了变化），添加e节点
 
+// const prevChildren = [
+//     h("p", { key : "A" }, "A"),
+//     h("p", { key: "B" }, "B"),
+//     h("p", { key: "C" , id : 'c-prev' }, "C"),
+//     h("p", { key : "D" }, "D"),
+//     h("p", { key: "F" }, "F"),
+//     h("p", { key : "G"}, "G"),
+// ]
+
+// const nextChildren = [
+//     h("p", { key : "A" }, "A"),
+//     h("p", { key: "B" }, "B"),
+//     h("p", { key : "E" }, "E"),
+//     h("p", { key: "C" , id : 'c-next' }, "C"),
+//     h("p", { key: "F" }, "F"),
+//     h("p", { key : "G"}, "G"),
+// ]
+
+
+
+// 3.1.2要处理的节点数量旧的大于新的情况
+// a b c e d f g
+// a b e c f g
+// 先确定好新children中要添加的节点和要修改的节点
+// 然后记录旧children中要被移除的节点数量，移除时一次性移除
+
+// const prevChildren = [
+//     h("p", { key : "A" , id : "a-prev"}, "A"),
+//     h("p", { key: "B" }, "B"),
+//     h("p", { key: "C" , id : 'c-prev' }, "C"),
+//     h("p", { key: "D" }, "D"),
+//     h("p", { key : "E" }, "E"),
+//     h("p", { key: "F" }, "F"),
+//     h("p", { key : "G"}, "G"),
+// ]
+
+// const nextChildren = [
+//     h("p", { key : "A" , id : "a-next"}, "A"),
+//     h("p", { key: "B" }, "B"),
+//     h("p", { key : "E" }, "E"),
+//     h("p", { key: "C" , id : 'c-next' }, "C"),
+//     h("p", { key: "F" }, "F"),
+//     h("p", { key : "G"}, "G"),
+// ]
+
+
+// 3.2实现新children中新节点的位置移动
 
 export const ArrayToArray = {
     name : "ArrayToArray",
