@@ -185,12 +185,13 @@ export function createRender(options) {
 
         // 判断两个虚拟节点是否相同的逻辑
         function isSameVnodeType(vnode1, vnode2) {
-            // 判断虚拟节点的类型或者虚拟节点所对应的组件的key值
+            // 判断虚拟节点的类型以及虚拟节点所对应的组件的key值
             return vnode1.type === vnode2.type && vnode1.key === vnode2.key;
         }
 
-        // 1.对比左侧
-        // 指针向左移动，遇到不相同的节点时停止对比
+        // 指针的移动和节点对比阶段
+        // 指针从两端开始进行移动
+        // 1.从左侧开始对比，i指针向右移动，遇到不相同的节点时停止对比
         while (i <= oe && i <= ne) {
             const oldVnode = oldChildren[i];
             const newVnode = newChildren[i];
@@ -204,8 +205,8 @@ export function createRender(options) {
         }
         // console.log(i);
 
-        // 2.对比右侧
-        // 指针向右移动，遇到不同的节点时停止对比
+        
+        // 2.从右侧开始对比，oe和ne指针向左移动，遇到不同的节点时停止对比
         while(i <= oe && i <= ne) {
             const oldVnode = oldChildren[oe];
             const newVnode = newChildren[ne];
@@ -223,10 +224,11 @@ export function createRender(options) {
         // console.log(i, oe, ne)
 
 
-        // 3.对比中间
-        // 3.1如果新的children虚拟节点长度大于旧的-添加新的节点
+        // 处理节点，在不同节点的区域内进行新节点的添加或者旧节点的删除或修改操作
+        // 一、处理两端-实现新children中节点的添加或者旧children中节点的删除
+        // 如果新的children虚拟节点长度大于旧的-添加新的节点
         // 确定中间的区域为 oe < i <= ne
-        // i的值为'1.对比左侧'结束后的值
+        // 添加新节点
         if (i > oe) {
             if (i <= ne) {
                 const nextPos = ne + 1;
@@ -239,7 +241,8 @@ export function createRender(options) {
                 }
             }
 
-            // 3.2如果旧的children虚拟节点长度大于新的-删除节点
+            // 删除旧节点
+            // 如果旧的children虚拟节点长度大于新的-删除节点
             // 确定中间的区域为 ne < i <= oe
             // 删除旧的children中i位置的那个节点
         } else if (i > ne) {
