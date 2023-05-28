@@ -16,7 +16,7 @@ export default {
                 h("p", {}, "主页"),
 
                 // // 情况1 : 旧元素虚拟节点的children类型为text，新元素虚拟节点的children类型为array
-                h(TextToArray),
+                // h(TextToArray),
 
                 // // 情况2 : 旧元素虚拟节点的children类型为array，新元素虚拟节点的children类型为text
                 // h(ArrayToText),
@@ -26,7 +26,7 @@ export default {
                 // h(TextToText),
 
                 // // 情况4 : 旧元素虚拟节点的children类型为array，新元素虚拟节点的children类型为array
-                // h(ArrayToArray),
+                h(ArrayToArray),
             ]
         )
     }

@@ -1,3 +1,4 @@
+import { isWhiteSpaceLike } from "typescript";
 import { effect } from "../reactivity";
 import { EMPTY_OBJ, isObject } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
@@ -20,7 +21,7 @@ export function createRender(options) {
 
     function render(vnode, container) {
         // 主要是调用patch方法
-        patch(null, vnode, container, null);
+        patch(null, vnode, container);
     }
 
 
@@ -28,7 +29,7 @@ export function createRender(options) {
     // oldVnode : 更新前的虚拟节点
     // newVnode : 更新后的虚拟节点
     // 如果不存在oldVnode作为初始化，反之为更新
-    function patch(oldVnode, newVnode, container, parentComponent) {
+    function patch(oldVnode, newVnode, container = null, parentComponent = null, anchor = null) {
         // 区分组件虚拟节点类型和元素虚拟节点类型的逻辑
         // 通过原始组件在console.log中的结果值判断
         // if (typeof vnode.type === 'string') {
@@ -70,7 +71,7 @@ export function createRender(options) {
                 // 判断是否为元素虚拟节点类型
                 if (shapeFlag & ShapeFlags.ELEMENT) {
                     // 元素虚拟节点类型
-                    processElement(oldVnode, newVnode, container, parentComponent);
+                    processElement(oldVnode, newVnode, container, parentComponent, anchor);
                     // 判断是否为组件虚拟节点类型
                 } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
                     // 如果虚拟节点为组件类型
@@ -94,22 +95,22 @@ export function createRender(options) {
 
     function mountChildren(children, container, parentComponent) {
         children.forEach(child => {
-            patch(null, child, container, parentComponent)
+            patch(null, child, container, parentComponent, null)
         })
     }
     function processComponent(oldVnode, newVnode, container, parentComponent) {
         mountComponent(newVnode, container, parentComponent);
     }
 
-    function processElement(oldVnode, newVnode, container, parentComponent) {
+    function processElement(oldVnode, newVnode, container, parentComponent, anchor) {
         if (!oldVnode) {
-            mountElement(newVnode, container, parentComponent);
+            mountElement(newVnode, container, parentComponent, anchor);
         } else {
-            patchElement(oldVnode, newVnode, container, parentComponent);
+            patchElement(oldVnode, newVnode, container, parentComponent, anchor);
         }
     }
 
-    function patchElement(oldVnode, newVnode, container, parentComponent) {
+    function patchElement(oldVnode, newVnode, container, parentComponent, anchor) {
         console.log("patchElement");
         console.log("old", oldVnode);
         console.log("new", newVnode);
@@ -118,12 +119,12 @@ export function createRender(options) {
         const newProps = newVnode.props || EMPTY_OBJ;
         const elem = (newVnode.elem = oldVnode.elem);
 
-        patchChildren(oldVnode, newVnode, elem, parentComponent);
+        patchChildren(oldVnode, newVnode, elem, parentComponent, anchor);
         patchProps(elem, oldProps, newProps);
     }
 
     // 比较新旧children
-    function patchChildren(oldVnode, newVnode, container, parentComponent) {
+    function patchChildren(oldVnode, newVnode, container, parentComponent, anchor) {
         const oldShapeFlag = oldVnode.shapeFlag;
         const newShapeFlag = newVnode.shapeFlag;
         const oldChildren = oldVnode.children;
@@ -166,8 +167,88 @@ export function createRender(options) {
                 hostSetElementText(container, "");
                 // 挂载新的children数组虚拟节点
                 mountChildren(newChildren, container, parentComponent);
+                // 情况4 : 旧元素虚拟节点的children类型为array，新元素虚拟节点的children类型为array
+            } else {
+                patchKeyedChildren(oldChildren, newChildren, container, parentComponent, anchor);
             }
         }
+    }
+
+    // diff算法
+    function patchKeyedChildren(oldChildren, newChildren, container, parentComponent, parentAnchor) {
+        const newChildrenLength = newChildren.length;
+        let i = 0;
+        // 旧新children数组最后一个值的索引
+        let oe = oldChildren.length - 1;
+        let ne = newChildrenLength - 1;
+        
+
+        // 判断两个虚拟节点是否相同的逻辑
+        function isSameVnodeType(vnode1, vnode2) {
+            // 判断虚拟节点的类型或者虚拟节点所对应的组件的key值
+            return vnode1.type === vnode2.type && vnode1.key === vnode2.key;
+        }
+
+        // 1.对比左侧
+        // 指针向左移动，遇到不相同的节点时停止对比
+        while (i <= oe && i <= ne) {
+            const oldVnode = oldChildren[i];
+            const newVnode = newChildren[i];
+
+            if (isSameVnodeType(oldVnode, newVnode)) {
+                patch(oldVnode, newVnode, container, parentComponent, parentAnchor);
+            } else {
+                break;
+            }
+            i++;
+        }
+        // console.log(i);
+
+        // 2.对比右侧
+        // 指针向右移动，遇到不同的节点时停止对比
+        while(i <= oe && i <= ne) {
+            const oldVnode = oldChildren[oe];
+            const newVnode = newChildren[ne];
+
+            if (isSameVnodeType(oldVnode, newVnode)) {
+                patch(oldVnode, newVnode, container, parentComponent, parentAnchor);
+            } else {
+                break;
+            }
+
+            // 通过向右移动oe和ne指针
+            oe--;
+            ne--;
+        }
+        // console.log(i, oe, ne)
+
+
+        // 3.对比中间
+        // 3.1如果新的children虚拟节点长度大于旧的-添加新的节点
+        // 确定中间的区域为 oe < i <= ne
+        // i的值为'1.对比左侧'结束后的值
+        if (i > oe) {
+            if (i <= ne) {
+                const nextPos = ne + 1;
+                // 指定插入新的节点的位置
+                const anchor = nextPos < newChildrenLength ? newChildren[nextPos].elem : null;
+                // 可能添加多个节点
+                while (i <= ne) {
+                    patch(null, newChildren[i], container, parentComponent, anchor);
+                    i++;
+                }
+            }
+
+            // 3.2如果旧的children虚拟节点长度大于新的-删除节点
+            // 确定中间的区域为 ne < i <= oe
+            // 删除旧的children中i位置的那个节点
+        } else if (i > ne) {
+            while (i <= oe) {
+                hostRemove(oldChildren[i].elem);
+                i++;
+            }
+        }
+        // console.log(i)
     }
 
 
@@ -212,7 +293,7 @@ export function createRender(options) {
         }
     }
 
-    function mountElement(vnode, container, parentComponent) {
+    function mountElement(vnode, container, parentComponent, anchor) {
         // 如果vnode的类型为元素虚拟节点类型
         // 则vnode中type属性对应元素名（例如div）
         // props属性对应元素上的特性名（例如id）
@@ -266,7 +347,7 @@ export function createRender(options) {
 
         // 自定义渲染器，使得vue能渲染在例如Canvas、DOM等不同平台上
         // 将以上代码抽离到inset函数中
-        hostInsert(elem, container);
+        hostInsert(elem, container, anchor);
     }
 
     function handleChildren(children, container, shapeFlag, parentComponent) {
