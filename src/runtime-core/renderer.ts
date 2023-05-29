@@ -7,6 +7,7 @@ import { createAppAPI } from "./createApp";
 import { getSequence } from "./helpers";
 import { shouldUpdateComponent } from "./helpers/componentUpdateUtils";
 import { Fragment } from "./helpers/renderSlots";
+import { queueJobs } from "./helpers/scheduler";
 
 
 // 用于实现一个自定义渲染接口，接收一个options对象作为参数，其中包含多个配置项
@@ -577,7 +578,14 @@ export function createRender(options) {
 
                 patch(prevSubTree, subTree, container, instance);
             }
-        })
+        }, {
+            scheduler() {
+                console.log("update-scheduler")
+                // 收集异步任务
+                queueJobs(instance.update);
+            }
+        }
+        )
     }
 
 
