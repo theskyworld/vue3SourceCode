@@ -1,5 +1,10 @@
 import { NodeTypes } from "./ast";
 
+const enum TagType{
+    Start,
+    End,
+}
+
 export function baseParse(content : string) {
 
     const context = createParserContext(content);
@@ -10,14 +15,45 @@ export function baseParse(content : string) {
 
 function parseChildren(context) {
     const nodes: Array<any> = [];
-    // 判断是否处理插值
+    // 判断解析插值
     let node;
     if (context.source.startsWith("{{")) {
         node = parseInterpolation(context);
+        // 判断解析元素
+    } else if (context.source[0] === "<" && /[a-z]/i.test(context.source[1])) {
+        // console.log('parse element')
+        node = parseElement(context);
     }
     nodes.push(node);
 
     return nodes;
+}
+
+function parseElement(context) {
+    // 解析<div>
+    const element = parseTag(context, TagType.Start);
+    // 解析</div>
+    parseTag(context, TagType.End);
+
+    return element;
+}
+
+function parseTag(context, tagType : TagType) {
+    // 使用正则解析出tag
+    const match: any = /^<\/?([a-z]*)/i.exec(context.source);
+    console.log(match); // "<div"
+    const tag = match[1];
+
+    // 删除处理完成的代码
+    // 删除"<div>"
+    advanceBy(context, match[0].length);
+    advanceBy(context, 1);
+
+    if (tagType === TagType.End) return;
+    return {
+        type: NodeTypes.ELEMENT,
+        tag,
+    }
 }
 
 function parseInterpolation(context) {
