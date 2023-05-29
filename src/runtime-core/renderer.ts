@@ -4,6 +4,7 @@ import { EMPTY_OBJ, isObject } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { createAppAPI } from "./createApp";
+import { getSequence } from "./helpers";
 import { Fragment } from "./helpers/renderSlots";
 
 
@@ -259,6 +260,8 @@ export function createRender(options) {
             let ns = i; // 新children中要进行比较的起始位置
             let toBePatched = ne - ns + 1; //记录新children中要添加或修改的节点数量
             let patched = 0; //记录新children中已经被添加或修改的节点数量
+            let moved = false; //控制新children中是否存在需要移动的节点
+            let maxNewIndexSoFar = 0; //记录新children中要处理的节点的最大顺序值（要处理的节点的数量 - 1）
 
             // 通过提供给节点的key属性进行比较
             // 其思路为将新children中要进行对比的节点区域中的所有节点的key以及相应的索引i存入映射表中
@@ -268,6 +271,17 @@ export function createRender(options) {
 
             // 建立新children中节点的key和节点的索引i的映射表
             const keyToNewIndexMap = new Map();
+
+
+            //解决处理中间节点时需要移动节点位置的情况
+            const newIndexToOldIndexArray = new Array(toBePatched);  // 存储所有要处理的中间节点在新children中的索引值
+            // 初始化，如果值为0，表示索引要处理的中间节点中第i个位置处的节点在旧的children中不存在，即需要新建的节点
+            // 反之，如果例如在newIndexToOldIndexArray中索引为2的位置处值为5，则表示在新的children中第6个节点是需要进行处理的，且在节点在所有要处理的节点中为第3个
+            for (let i = 0; i < toBePatched; i++) {
+                newIndexToOldIndexArray[i] = 0;
+            }
+
+            
             // 遍历新children中要对比的区域节点的key并将其对应的索引i存入映射表中
             for (let i = ns; i <= ne; i++) {
                 const newChild = newChildren[i];
@@ -281,7 +295,7 @@ export function createRender(options) {
 
                 // 如果新children中要被添加或修改的节点已经处理完毕了，但是还是调用了patch方法导致patched++
                 // 当patched >= toBePatched时说明旧的children中存在要被移除的节点
-                if (patched >= toBePatched) {
+                    if (patched >= toBePatched) {
                     // 直接将当前旧children中的节点移除
                     // 跳出后面的逻辑，进入下次循环
                     hostRemove(oldChild.elem);
@@ -308,10 +322,59 @@ export function createRender(options) {
                     hostRemove(oldChild.elem);
                 } else {
                     // 能找到则说明是已存在的
+
+                    if (newIndex >= maxNewIndexSoFar) {
+                        maxNewIndexSoFar = newIndex;
+                    } else {
+                        moved = true;
+                    }
+        
+                    // 给newIndexToOldIndexArray赋值，记录在新的children中所有要进行处理的节点的索引
+                    newIndexToOldIndexArray[newIndex - ns] = i + 1;
+                    
                     patch(oldChild, newChildren[newIndex], container, parentComponent, null);
                     patched++;
                 }
             }
+
+            // 求取newIndexToOldIndexArray中的最长递增子序列（即前后顺序稳定的、不需要移动的节点索引）
+                const increasingNewIndexSequence = moved ? getSequence(newIndexToOldIndexArray) : [];    //返回的数组的值是不需要移动的节点在所有要处理的节点中所对应的顺序
+                // 例如[5,3,4]为新children中所有要处理的节点的索引
+                // 那么所对应的节点顺序的数组为[0,1,2]，最长递增子序列为[1,2]，即对应的3和4数组
+
+                // let j = 0;
+                // for (let i = 0; i < toBePatched; i++) {
+                //     if (i !== increasingNewIndexSequence[j]) {
+                //         // 需要移动位置的节点对应的顺序
+                //     } else {
+                //         // 不需要移动位置的节点对应的顺序
+                //         j++;
+                //     }
+                // }
+
+                // 倒序判断和插入节点
+                let j = increasingNewIndexSequence.length - 1;
+                for (let i = toBePatched - 1; i >= 0; i--) {
+                    const nextIndex = i + ns; //所有新children中要处理的节点在要处理的节点中的顺序
+                    const nextChild = newChildren[nextIndex];
+                    const anchor = nextIndex + 1 < newChildrenLength ? newChildren[nextIndex + 1].elem : null;
+
+                    // console.log("nextChild",nextChild)
+                    if (newIndexToOldIndexArray[i] === 0) {
+                        // 新建或修改节点
+                        patch(null, nextChild, container, parentComponent, anchor);
+                    // 移动节点
+                    } else if (moved) {
+                        
+                        if (j < 0 || i !== increasingNewIndexSequence[j]) {
+                        // 要移动位置的节点
+                        hostInsert(nextChild.elem, container, anchor);
+ 
+                        } else {
+                            j--;
+                        }
+                    }
+                }
 
             
         }
