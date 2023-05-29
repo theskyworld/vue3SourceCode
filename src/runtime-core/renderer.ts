@@ -5,6 +5,7 @@ import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { createAppAPI } from "./createApp";
 import { getSequence } from "./helpers";
+import { shouldUpdateComponent } from "./helpers/componentUpdateUtils";
 import { Fragment } from "./helpers/renderSlots";
 
 
@@ -100,7 +101,23 @@ export function createRender(options) {
         })
     }
     function processComponent(oldVnode, newVnode, container, parentComponent) {
-        mountComponent(newVnode, container, parentComponent);
+        if (!oldVnode) {
+            mountComponent(newVnode, container, parentComponent);
+        } else {
+            updateComponent(oldVnode, newVnode);
+        }
+    }
+
+    function updateComponent(oldVnode, newVnode) {
+        const instance = (newVnode.component = oldVnode.component);
+        if (shouldUpdateComponent(oldVnode, newVnode)) {
+            // console.log("instance",instance);
+            instance.nextVnode = newVnode;
+            instance.update();
+        } else {
+            newVnode.elem = oldVnode.elem;
+            instance.vnode = newVnode;
+        }
     }
 
     function processElement(oldVnode, newVnode, container, parentComponent, anchor) {
@@ -503,7 +520,7 @@ export function createRender(options) {
         }
     }
     function mountComponent(vnode, container, parentComponent) {
-        const instance = createComponentInstance(vnode, parentComponent);
+        const instance = (vnode.component = createComponentInstance(vnode, parentComponent));
         // 先初始化props和slots，然后获取并处理原始组件中的setup函数的返回值
         setupComponent(instance);
         // 调用原始组件的render()函数，获取其返回的结果值，元素虚拟节点类型，然后调用processElement()将元素类型挂载到容器元素上，渲染在页面上
@@ -524,7 +541,7 @@ export function createRender(options) {
 
         // 实现update
         // 将以上代码放入effect中作为依赖，当值发生更新时触发依赖的收集和依赖触发
-        effect(() => {
+        instance.update = effect(() => {
             // 区分页面初始化和更新（组件挂载和更新）
             if (!instance.isMounted) {
                 // 初始化
@@ -540,6 +557,15 @@ export function createRender(options) {
             } else {
                 // 更新
                 console.log("更新");
+
+                // 更新组件的props
+                const { nextVnode, vnode: oldVnode } = instance;
+                if (nextVnode) {
+                    nextVnode.elem = oldVnode.elem;
+                    updateComponentPreRender(instance, nextVnode);
+                }
+
+
                 const { proxy } = instance;
                 // 之前（更新前）的subTree
                 const prevSubTree = instance.subTree;
@@ -560,4 +586,12 @@ export function createRender(options) {
     return {
         createApp : createAppAPI(render)
     }
+}
+
+function updateComponentPreRender(instance, nextVnode) {
+
+    instance.vnode = nextVnode;
+    instance.nextVnode = null;
+
+    instance.props = nextVnode.props;
 }

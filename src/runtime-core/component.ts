@@ -22,7 +22,9 @@ export function createComponentInstance(vnode, parent) {
         provides : parent ? parent.provides : {},
         parent,
         isMounted: false,
-        subTree : {},
+        subTree: {},
+        update: () => { },
+        nextVnode : null,
     };
     component.emit = emit.bind(null, component) as any;
     return component;
