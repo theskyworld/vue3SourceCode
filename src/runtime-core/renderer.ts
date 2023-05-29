@@ -309,7 +309,7 @@ export function createRender(options) {
                     newIndex = keyToNewIndexMap.get(oldChild.key);
                 } else {
                     // 方式二；通过遍历进行比较
-                    for (let j = ns; j < ne; j++) {
+                    for (let j = ns; j <= ne; j++) {
                         if (isSameVnodeType(oldChild, newChildren[j])) {
                             newIndex = j;
                             break;
