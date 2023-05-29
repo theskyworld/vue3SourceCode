@@ -24,9 +24,38 @@ function parseChildren(context) {
         // console.log('parse element')
         node = parseElement(context);
     }
+
+    // 判断解析文本
+    if (!node) {
+        node = parseText(context);
+    }
     nodes.push(node);
 
     return nodes;
+}
+
+function parseText(context) {
+    // // 获取字符串内
+    // const content = context.source.slice(0, context.source.length);
+
+    // // 删除已经处理的内容
+    // advanceBy(context, content.length);
+    const content = parseTextData(context, context.source.length);
+
+    return {
+        type: NodeTypes.TEXT,
+        content,
+    }
+}
+
+function parseTextData(context, length) {
+     // 获取字符串内
+    const content = context.source.slice(0, length);
+
+    // 删除已经处理的内容
+    advanceBy(context, length);
+
+    return content;
 }
 
 function parseElement(context) {
@@ -69,14 +98,16 @@ function parseInterpolation(context) {
 
     // console.log(context.source); // "message}}"
     const rawContentLength = closeIndex - openDelimiter.length;
-    const rawcontent = context.source.slice(0, rawContentLength);
+    // const rawcontent = context.source.slice(0, rawContentLength);
+    const rawcontent = parseTextData(context, rawContentLength)
     // 处理空格
     const content = rawcontent.trim();
     // console.log(content); // "message"
     // 删除插值字符串后的（"}}"后的）所有内容
 
     // context.source = context.source.slice(rawContentLength + closeDelimiter.length);
-    advanceBy(context, rawContentLength + closeDelimiter.length)
+    // advanceBy(context, rawContentLength + closeDelimiter.length);
+    advanceBy(context, closeDelimiter.length);
 
     // console.log(content);
     return {
