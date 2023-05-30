@@ -1,4 +1,7 @@
 // 支持接收options参数，从函数外部来指定函数内部对数据的处理方式
+
+import { NodeTypes } from "./ast";
+
 // 实现函数的可测试性，函数的插件体系
 export function transform(root, options = {}) {
     const context = createTransformContext(root, options);
@@ -6,6 +9,8 @@ export function transform(root, options = {}) {
     traverseNode(root, context);
 
     createRootCodegen(root);
+
+    root.helpers = [...context.helpers.keys()]
 }
 
 function createRootCodegen(root) {
@@ -17,7 +22,11 @@ function createRootCodegen(root) {
 function createTransformContext(root : any, options : any) : any {
     const context = {
         root,
-        nodeTransforms : options.nodeTransforms || [],
+        nodeTransforms: options.nodeTransforms || [],
+        helpers: new Map(),
+        helper(key) {
+            context.helpers.set(key, 1);
+        }
     }
 
     return context;
@@ -36,18 +45,29 @@ function traverseNode(node, context) {
         transform(node);
     }
 
+    switch (node.type) {
+        case NodeTypes.INTERPOLATION:
+            context.helper("toDisplayString");
+            break;
+        case NodeTypes.ROOT:
+        case NodeTypes.ELEMENT:
+            traverseChildren(node, context);
+            break;
+        default:
+            break;
+    }
     // 将函数的变动点和稳定点分离
     // 稳定点
-    traverseChildren(node, context);
+    // traverseChildren(node, context);
 }
 
 function traverseChildren(node, context) {
     const children = node.children;
 
-    if (children) {
+    // if (children) {
         for (let i = 0; i < children.length; i++) {
             const node = children[i];
             traverseNode(node, context);
         }
-    }
+    // }
 }
