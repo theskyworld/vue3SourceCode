@@ -1,9 +1,17 @@
 // 支持接收options参数，从函数外部来指定函数内部对数据的处理方式
 // 实现函数的可测试性，函数的插件体系
-export function transform(root, options) {
+export function transform(root, options = {}) {
     const context = createTransformContext(root, options);
     // 遍历语法树，深度优先搜索算法
     traverseNode(root, context);
+
+    createRootCodegen(root);
+}
+
+function createRootCodegen(root) {
+    // 获取语法树中的入口节点（root节点的第一个子节点，并赋值给root.codegenNode）
+    // 以后处理语法树都基于入口节点处理
+    root.codegenNode = root.children[0];
 }
 
 function createTransformContext(root : any, options : any) : any {
