@@ -8,39 +8,77 @@ const enum TagType{
 export function baseParse(content : string) {
 
     const context = createParserContext(content);
-    return createRoot(parseChildren(context))
+    return createRoot(parseChildren(context, ""))
 
 
 }
 
-function parseChildren(context) {
+function parseChildren(context, parentTag) {
     const nodes: Array<any> = [];
-    // 判断解析插值
-    let node;
-    if (context.source.startsWith("{{")) {
-        node = parseInterpolation(context);
-        // 判断解析元素
-    } else if (context.source[0] === "<" && /[a-z]/i.test(context.source[1])) {
-        // console.log('parse element')
-        node = parseElement(context);
-    }
+   
+    // 循环解析一个或多个children
+    while (!isEnd(context, parentTag)) {
+        let node;
+         // 判断解析插值
+        if (context.source.startsWith("{{")) {
+            node = parseInterpolation(context);
+            // 判断解析元素
+        } else if (context.source[0] === "<" && /[a-z]/i.test(context.source[1])) {
+            // console.log('parse element')
+            node = parseElement(context);
+        }
 
-    // 判断解析文本
-    if (!node) {
-        node = parseText(context);
+        // 判断解析文本
+        if (!node) {
+            node = parseText(context);
+        }
+        nodes.push(node);
     }
-    nodes.push(node);
 
     return nodes;
 }
 
+function isEnd(context, parentTag) {
+    // 确定while循环结束的条件
+    // 1.当遇到结束标签时
+    const s = context.source;
+    if (parentTag && s.startsWith(`</${parentTag}>`)) {
+        return true;
+    }
+
+    // 2.当source处理完成时
+    return !s;
+
+}
+
 function parseText(context) {
-    // // 获取字符串内
-    // const content = context.source.slice(0, context.source.length);
+
+    // 解析三种类型的联合类型
+    // 字符串的部分是指在插值类型的"{{"前的部分
+    let endIndex = context.source.length;
+    let endTokens = ["<", "{{"];
+    
+    for (let i = 0; i < endTokens.length; i++) {
+        const index = context.source.indexOf(endTokens[i]);
+        // 在context.source中找到了"{{"，说明存在插值
+        // 字符串的部分是指在插值类型的"{{"或者元素类型的"<"（嵌套元素内）两者之中第一个前的部分
+        if (index !== -1 && endIndex > index) {
+            endIndex = index;
+        }
+    }
+    
+    
+
+
+    // // 获取字符串内容
+    // const content = context.source.slice(0, endIndex);
 
     // // 删除已经处理的内容
     // advanceBy(context, content.length);
-    const content = parseTextData(context, context.source.length);
+    const content = parseTextData(context, endIndex);
+
+    
+
 
     return {
         type: NodeTypes.TEXT,
@@ -60,7 +98,13 @@ function parseTextData(context, length) {
 
 function parseElement(context) {
     // 解析<div>
-    const element = parseTag(context, TagType.Start);
+    const element : any = parseTag(context, TagType.Start);
+
+    // 解析三种类型的联合类型
+    // 解析元素类型的时候，其下面可能存在多个或多层嵌套的children需要解析
+    // 递归进行解析
+    element.children = parseChildren(context, element.tag);
+
     // 解析</div>
     parseTag(context, TagType.End);
 
