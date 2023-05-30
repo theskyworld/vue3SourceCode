@@ -8,16 +8,19 @@ const enum TagType{
 export function baseParse(content : string) {
 
     const context = createParserContext(content);
-    return createRoot(parseChildren(context, ""))
+    return createRoot(parseChildren(context, []))
 
 
 }
 
-function parseChildren(context, parentTag) {
+function parseChildren(context, ancestors) {
+    // 使用ancestors收集所有的标签名
+    // 用于判断是否存在缺少结束标签的标签或者获取某个指定标签
+
     const nodes: Array<any> = [];
    
     // 循环解析一个或多个children
-    while (!isEnd(context, parentTag)) {
+    while (!isEnd(context, ancestors)) {
         let node;
          // 判断解析插值
         if (context.source.startsWith("{{")) {
@@ -25,7 +28,7 @@ function parseChildren(context, parentTag) {
             // 判断解析元素
         } else if (context.source[0] === "<" && /[a-z]/i.test(context.source[1])) {
             // console.log('parse element')
-            node = parseElement(context);
+            node = parseElement(context, ancestors);
         }
 
         // 判断解析文本
@@ -38,12 +41,29 @@ function parseChildren(context, parentTag) {
     return nodes;
 }
 
-function isEnd(context, parentTag) {
+function isEnd(context, ancestors) {
     // 确定while循环结束的条件
     // 1.当遇到结束标签时
     const s = context.source;
-    if (parentTag && s.startsWith(`</${parentTag}>`)) {
-        return true;
+    // if (parentTag && s.startsWith(`</${parentTag}>`)) {
+    //     return true;
+    // }
+
+    // 当每次遇到结束标签时，判断ancestors中是否存在相应匹配的开始标签
+    if (s.startsWith("</")) {
+        // for (let i = 0; i < ancestors.length; i++) {
+        for (let i = ancestors.length - 1; i >= 0; i--) {
+            // 取出ancestors中每个标签的标签名
+            const tag = ancestors[i].tag;
+            // 截取出结束标签的标签名并进行对比
+            // if (s.slice(2, 2 + tag.length) === tag) {
+            //     return true;
+            // }
+
+            if (isStartsWithEndTagOpen(s, tag)) {
+                return true;
+            }
+        }
     }
 
     // 2.当source处理完成时
@@ -96,21 +116,35 @@ function parseTextData(context, length) {
     return content;
 }
 
-function parseElement(context) {
+function parseElement(context, ancestors) {
     // 解析<div>
-    const element : any = parseTag(context, TagType.Start);
+    const element: any = parseTag(context, TagType.Start);
+    
+    ancestors.push(element); //将每个element收集进入ancestors
 
     // 解析三种类型的联合类型
     // 解析元素类型的时候，其下面可能存在多个或多层嵌套的children需要解析
     // 递归进行解析
-    element.children = parseChildren(context, element.tag);
+    element.children = parseChildren(context, ancestors);
 
-    // 解析</div>
-    parseTag(context, TagType.End);
+    ancestors.pop();
+
+    // if (context.source.slice(2, 2 + element.tag.length) === element.tag) {
+    if(isStartsWithEndTagOpen(context.source, element.tag)){
+            // 解析</div>
+        parseTag(context, TagType.End);
+    } else {
+        throw new Error(`缺少结束标签:${element.tag}`)
+    }
 
     return element;
 }
 
+function isStartsWithEndTagOpen(source, tag) {
+    return source.startsWith("</") &&
+        source.slice(2, 2 + tag.length).toLowerCase() === tag.toLowerCase();
+
+}
 function parseTag(context, tagType : TagType) {
     // 使用正则解析出tag
     const match: any = /^<\/?([a-z]*)/i.exec(context.source);
