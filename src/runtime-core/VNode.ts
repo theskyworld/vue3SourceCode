@@ -1,5 +1,9 @@
 import { ShapeFlags } from "../shared/ShapeFlags";
 
+export {
+    createVNode as createElementBlock,
+}
+
 export function createVNode(type, props?, children?) {
     // 主要是返回一个vnode对象
     const vnode = {

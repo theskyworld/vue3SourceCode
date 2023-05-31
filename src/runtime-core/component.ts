@@ -112,15 +112,27 @@ function finishComponentSetup(instance) {
     const component = instance.type;
     // 如果组件上存在render函数，则调用该render函数
     if (component.render) {
-        instance.render = component.render;
+        // 否則使用解析出來的render函數
+    } else {
+        if (compiler) {
+            if (component.template) {
+                component.render = compiler(component.template);
+            }
+        }
     }
-}
+    instance.render = component.render;
+}   
 
 export function getCurrentInstance() {
     return currentInstance;
 }
 
-
 function setCurrentInstance(instance) {
     currentInstance = instance;
+}
+
+
+let compiler;
+export function registerRuntimeCompiler(_compiler) {
+    compiler = _compiler;
 }

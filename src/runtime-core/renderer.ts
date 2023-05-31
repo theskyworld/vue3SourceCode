@@ -548,7 +548,7 @@ export function createRender(options) {
                 // 初始化
                 console.log("初始化")
                 const { proxy } = instance;
-                const subTree =  (instance.subTree = instance.render.call(proxy));
+                const subTree =  (instance.subTree = instance.render.call(proxy, proxy));
                 console.log(subTree)
                 patch(null, subTree, container, instance);
                 vnode.elem = subTree.elem;
@@ -571,7 +571,7 @@ export function createRender(options) {
                 // 之前（更新前）的subTree
                 const prevSubTree = instance.subTree;
                 // console.log(prevSubTree);
-                const subTree = instance.render.call(proxy);
+                const subTree = instance.render.call(proxy, proxy);
                 // 更新后的subTree
                 instance.subTree = subTree;
                 // console.log(subTree);
