@@ -148,7 +148,7 @@ function isStartsWithEndTagOpen(source, tag) {
 function parseTag(context, tagType : TagType) {
     // 使用正则解析出tag
     const match: any = /^<\/?([a-z]*)/i.exec(context.source);
-    console.log(match); // "<div"
+    // console.log(match); // "<div"
     const tag = match[1];
 
     // 删除处理完成的代码

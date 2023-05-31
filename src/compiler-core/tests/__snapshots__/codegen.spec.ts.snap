@@ -1,5 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`codegen element 1`] = `
+"const { createElementBlock : _createElementBlock, openBlock : _openBlock } = Vue
+return function render(_ctx, _cache){return (_openBlock(), _createElementBlock("div"))}"
+`;
+
 exports[`codegen interpolation 1`] = `
 "const { toDisplayString : _toDisplayString } = Vue
 return function render(_ctx, _cache){return _toDisplayString(_ctx.message)}"
@@ -8,4 +13,9 @@ return function render(_ctx, _cache){return _toDisplayString(_ctx.message)}"
 exports[`codegen string 1`] = `
 "
 return function render(_ctx, _cache){return 'hi'}"
+`;
+
+exports[`codegen union 1`] = `
+"const { toDisplayString : _toDisplayString, createElementBlock : _createElementBlock, openBlock : _openBlock } = Vue
+return function render(_ctx, _cache){return (_openBlock(), _createElementBlock("div", null, 'hi,' + _toDisplayString(_ctx.message), 1 /* TEXT */))}"
 `;
